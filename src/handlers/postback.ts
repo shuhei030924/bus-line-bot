@@ -19,17 +19,29 @@ import { createNotification, getPendingNotifications, cancelNotifications, delet
  * ポストバックイベントを処理
  */
 export async function handlePostback(event: PostbackEvent) {
+  console.log('=== handlePostback called ===');
+  console.log('Postback data:', event.postback.data);
+  
   const userId = event.source.userId;
-  if (!userId) return;
+  if (!userId) {
+    console.log('No userId');
+    return;
+  }
 
   const data = new URLSearchParams(event.postback.data);
   const action = data.get('action');
+  console.log('Action:', action);
 
   const settings = await getUserSettings(userId);
-  if (!settings) return;
+  if (!settings) {
+    console.log('No user settings found');
+    return;
+  }
+  console.log('User settings:', JSON.stringify(settings));
 
   switch (action) {
     case 'search': {
+      console.log('Processing search action');
       const direction = data.get('direction') as 'outbound' | 'inbound';
       const departureStop = direction === 'outbound' 
         ? settings.outboundDeparture 
@@ -37,8 +49,11 @@ export async function handlePostback(event: PostbackEvent) {
       const arrivalStop = direction === 'outbound' 
         ? settings.outboundArrival 
         : settings.inboundArrival;
+      console.log(`Direction: ${direction}, From: ${departureStop}, To: ${arrivalStop}`);
 
       const buses = findNextBuses(direction, departureStop, arrivalStop, 2);
+      console.log('Buses found:', buses.length);
+      
       const message = createBusScheduleMessage(
         direction,
         departureStop,
@@ -46,7 +61,9 @@ export async function handlePostback(event: PostbackEvent) {
         buses
       );
 
+      console.log('Sending reply...');
       await replyMessage(event.replyToken, [message]);
+      console.log('Reply sent successfully');
       break;
     }
 
