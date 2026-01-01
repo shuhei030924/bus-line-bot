@@ -247,9 +247,11 @@ export async function handlePostback(event: PostbackEvent) {
     }
 
     case 'set_notification': {
+      console.log('=== set_notification called ===');
       const direction = data.get('direction') as 'outbound' | 'inbound';
       const params = event.postback.params as { datetime?: string } | undefined;
       const datetime = params?.datetime;
+      console.log('Direction:', direction, 'Datetime:', datetime);
       
       if (!datetime) {
         await replyMessage(event.replyToken, [
@@ -258,34 +260,43 @@ export async function handlePostback(event: PostbackEvent) {
         break;
       }
 
-      const notifyAt = new Date(datetime);
+      // LINEから送られる日時はローカルタイム（JST）
+      const notifyAt = new Date(datetime + ':00+09:00');
       const now = new Date();
+      console.log('notifyAt:', notifyAt.toISOString(), 'now:', now.toISOString());
 
       // 過去の日時は設定できない
       if (notifyAt <= now) {
+        console.log('Past datetime detected');
         await replyMessage(event.replyToken, [
           { type: 'text', text: '過去の日時は設定できません。' },
         ]);
         break;
       }
 
+      console.log('Creating notification...');
       await createNotification(userId, direction, notifyAt);
+      console.log('Notification created');
 
       const dateStr = notifyAt.toLocaleDateString('ja-JP', {
         month: 'long',
         day: 'numeric',
+        timeZone: 'Asia/Tokyo',
       });
       const timeStr = notifyAt.toLocaleTimeString('ja-JP', {
         hour: '2-digit',
         minute: '2-digit',
+        timeZone: 'Asia/Tokyo',
       });
 
+      console.log('Sending confirmation...');
       await replyMessage(event.replyToken, [
         {
           type: 'text',
           text: `🔔 ${dateStr} ${timeStr} にリマインダーをセットしました！`,
         },
       ]);
+      console.log('Confirmation sent');
       break;
     }
 
