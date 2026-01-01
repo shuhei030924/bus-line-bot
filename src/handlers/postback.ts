@@ -19,29 +19,17 @@ import { createNotification, getPendingNotifications, cancelNotifications, delet
  * ポストバックイベントを処理
  */
 export async function handlePostback(event: PostbackEvent) {
-  console.log('=== handlePostback called ===');
-  console.log('Postback data:', event.postback.data);
-  
   const userId = event.source.userId;
-  if (!userId) {
-    console.log('No userId');
-    return;
-  }
+  if (!userId) return;
 
   const data = new URLSearchParams(event.postback.data);
   const action = data.get('action');
-  console.log('Action:', action);
 
   const settings = await getUserSettings(userId);
-  if (!settings) {
-    console.log('No user settings found');
-    return;
-  }
-  console.log('User settings:', JSON.stringify(settings));
+  if (!settings) return;
 
   switch (action) {
     case 'search': {
-      console.log('Processing search action');
       const direction = data.get('direction') as 'outbound' | 'inbound';
       const departureStop = direction === 'outbound' 
         ? settings.outboundDeparture 
@@ -49,11 +37,8 @@ export async function handlePostback(event: PostbackEvent) {
       const arrivalStop = direction === 'outbound' 
         ? settings.outboundArrival 
         : settings.inboundArrival;
-      console.log(`Direction: ${direction}, From: ${departureStop}, To: ${arrivalStop}`);
 
       const buses = findNextBuses(direction, departureStop, arrivalStop, 2);
-      console.log('Buses found:', buses.length);
-      
       const message = createBusScheduleMessage(
         direction,
         departureStop,
@@ -61,9 +46,7 @@ export async function handlePostback(event: PostbackEvent) {
         buses
       );
 
-      console.log('Sending reply...');
       await replyMessage(event.replyToken, [message]);
-      console.log('Reply sent successfully');
       break;
     }
 
@@ -247,11 +230,9 @@ export async function handlePostback(event: PostbackEvent) {
     }
 
     case 'set_notification': {
-      console.log('=== set_notification called ===');
       const direction = data.get('direction') as 'outbound' | 'inbound';
       const params = event.postback.params as { datetime?: string } | undefined;
       const datetime = params?.datetime;
-      console.log('Direction:', direction, 'Datetime:', datetime);
       
       if (!datetime) {
         await replyMessage(event.replyToken, [
@@ -263,20 +244,16 @@ export async function handlePostback(event: PostbackEvent) {
       // LINEから送られる日時はローカルタイム（JST）
       const notifyAt = new Date(datetime + ':00+09:00');
       const now = new Date();
-      console.log('notifyAt:', notifyAt.toISOString(), 'now:', now.toISOString());
 
       // 過去の日時は設定できない
       if (notifyAt <= now) {
-        console.log('Past datetime detected');
         await replyMessage(event.replyToken, [
           { type: 'text', text: '過去の日時は設定できません。' },
         ]);
         break;
       }
 
-      console.log('Creating notification...');
       await createNotification(userId, direction, notifyAt);
-      console.log('Notification created');
 
       const dateStr = notifyAt.toLocaleDateString('ja-JP', {
         month: 'long',
@@ -289,14 +266,12 @@ export async function handlePostback(event: PostbackEvent) {
         timeZone: 'Asia/Tokyo',
       });
 
-      console.log('Sending confirmation...');
       await replyMessage(event.replyToken, [
         {
           type: 'text',
           text: `🔔 ${dateStr} ${timeStr} にリマインダーをセットしました！`,
         },
       ]);
-      console.log('Confirmation sent');
       break;
     }
 

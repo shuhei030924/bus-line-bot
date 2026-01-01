@@ -68,16 +68,41 @@ const schedulePath = path.join(__dirname, '../../data/schedules.json');
 const scheduleData: ScheduleData = JSON.parse(fs.readFileSync(schedulePath, 'utf-8'));
 
 /**
+ * 日本時間の現在時刻を取得
+ */
+function getJapanTime(): Date {
+  const now = new Date();
+  // UTC時間に9時間足して日本時間に変換
+  const japanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000));
+  return japanTime;
+}
+
+/**
+ * 日本時間の時・分を取得
+ */
+function getJapanHoursAndMinutes(): { hours: number; minutes: number } {
+  const japanTime = getJapanTime();
+  return {
+    hours: japanTime.getUTCHours(),
+    minutes: japanTime.getUTCMinutes(),
+  };
+}
+
+/**
  * 土日祝日かどうかを判定
  */
-export function isHoliday(date: Date = new Date()): boolean {
-  const dayOfWeek = date.getDay();
+export function isHoliday(date?: Date): boolean {
+  const checkDate = date || getJapanTime();
+  const dayOfWeek = date ? checkDate.getDay() : checkDate.getUTCDay();
   // 土曜(6)または日曜(0)
   if (dayOfWeek === 0 || dayOfWeek === 6) {
     return true;
   }
   // 祝日チェック
-  const dateStr = date.toISOString().split('T')[0];
+  const year = date ? checkDate.getFullYear() : checkDate.getUTCFullYear();
+  const month = date ? checkDate.getMonth() + 1 : checkDate.getUTCMonth() + 1;
+  const day = date ? checkDate.getDate() : checkDate.getUTCDate();
+  const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
   return japaneseHolidays.includes(dateStr);
 }
 
@@ -112,8 +137,8 @@ export function findNextBuses(
   arrivalStop: string,
   count: number = 2
 ): Array<{ departureTime: string; arrivalTime: string; gate?: string; isHoliday: boolean }> {
-  const now = new Date();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const { hours, minutes } = getJapanHoursAndMinutes();
+  const currentMinutes = hours * 60 + minutes;
   const todaySchedule = getScheduleForToday();
   const holiday = isHoliday();
 
@@ -167,9 +192,12 @@ export function findBusesToArriveBy(
   count: number = 2
 ): Array<{ departureTime: string; arrivalTime: string; gate?: string; isHoliday: boolean }> {
   const targetMinutes = timeToMinutes(targetArrivalTime);
-  const now = new Date();
-  const isToday = targetDate.toDateString() === now.toDateString();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const japanNow = getJapanTime();
+  const japanToday = `${japanNow.getUTCFullYear()}-${String(japanNow.getUTCMonth() + 1).padStart(2, '0')}-${String(japanNow.getUTCDate()).padStart(2, '0')}`;
+  const targetDateStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
+  const isToday = targetDateStr === japanToday;
+  const { hours, minutes } = getJapanHoursAndMinutes();
+  const currentMinutes = hours * 60 + minutes;
   const todaySchedule = getScheduleForDate(targetDate);
   const holiday = isHoliday(targetDate);
 

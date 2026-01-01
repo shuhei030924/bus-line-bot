@@ -74,7 +74,6 @@ export async function getUserSettings(lineUserId: string) {
   
   // ユーザーが存在しない場合は自動作成
   if (!user) {
-    console.log('User not found, creating new user:', lineUserId);
     user = await prisma.user.create({
       data: {
         lineUserId,

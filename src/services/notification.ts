@@ -76,7 +76,6 @@ export async function getPendingNotifications(lineUserId: string) {
  */
 async function processNotifications() {
   const now = new Date();
-  console.log('=== Processing notifications at:', now.toISOString());
 
   // 現在時刻の通知を取得
   const notifications = await prisma.notification.findMany({
@@ -95,12 +94,9 @@ async function processNotifications() {
     },
   });
 
-  console.log('Pending notifications found:', notifications.length);
-
   for (const notification of notifications) {
     try {
       const { user } = notification;
-      console.log('Sending notification to:', user.lineUserId);
 
       // シンプルなリマインダーメッセージだけ送信
       await client.pushMessage(user.lineUserId, [
@@ -109,14 +105,12 @@ async function processNotifications() {
           text: '⏰ 通知時間になりました！',
         },
       ]);
-      console.log('Notification sent successfully');
 
       // ステータスを更新
       await prisma.notification.update({
         where: { id: notification.id },
         data: { status: 'sent' },
       });
-      console.log('Notification status updated to sent');
     } catch (error) {
       console.error('Notification error:', error);
     }
