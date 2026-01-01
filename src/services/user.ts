@@ -64,12 +64,33 @@ export async function updateUserSettings(
 }
 
 /**
- * ユーザー設定を取得
+ * ユーザー設定を取得（存在しない場合は作成）
  */
 export async function getUserSettings(lineUserId: string) {
-  const user = await prisma.user.findUnique({
+  let user = await prisma.user.findUnique({
     where: { lineUserId },
     include: { settings: true },
   });
+  
+  // ユーザーが存在しない場合は自動作成
+  if (!user) {
+    console.log('User not found, creating new user:', lineUserId);
+    user = await prisma.user.create({
+      data: {
+        lineUserId,
+        registrationStatus: 'completed',
+        settings: {
+          create: {
+            outboundDeparture: config.defaults.outboundDeparture,
+            outboundArrival: config.defaults.outboundArrival,
+            inboundDeparture: config.defaults.inboundDeparture,
+            inboundArrival: config.defaults.inboundArrival,
+          },
+        },
+      },
+      include: { settings: true },
+    });
+  }
+  
   return user?.settings;
 }
