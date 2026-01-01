@@ -1,0 +1,40 @@
+{
+  "name": "bus-line-bot",
+  "version": "1.0.0",
+  "description": "LINE Bot for bus schedule notification",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "ts-node-dev --respawn src/index.ts",
+    "build": "tsc && prisma generate",
+    "start": "node dist/index.js",
+    "postinstall": "prisma generate",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate deploy",
+    "db:studio": "prisma studio",
+    "setup:richmenu": "ts-node src/scripts/setupRichMenu.ts"
+  },
+  "keywords": [
+    "line-bot",
+    "bus-schedule"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@line/bot-sdk": "^9.4.0",
+    "@prisma/client": "^5.22.0",
+    "@types/sharp": "^0.31.1",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "node-cron": "^3.0.3",
+    "sharp": "^0.34.5"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.1",
+    "@types/node-cron": "^3.0.11",
+    "prisma": "^5.22.0",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.7.2"
+  }
+}

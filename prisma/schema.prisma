@@ -1,0 +1,65 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// 本番環境はPostgreSQLを使用
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ユーザー情報
+model User {
+  id                 String         @id @default(uuid())
+  lineUserId         String         @unique
+  displayName        String?
+  registrationStatus String         @default("pending") // pending, setup_outbound, setup_inbound, completed
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  // ユーザーのバス停設定
+  settings           UserSettings?
+  notifications      Notification[]
+
+  @@map("users")
+}
+
+// ユーザーのバス停設定
+model UserSettings {
+  id                  String   @id @default(uuid())
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // 行き設定（会社行き）
+  outboundDeparture   String   @default("西条駅")  // 乗車バス停
+  outboundArrival     String   @default("会社")    // 降車バス停
+
+  // 帰り設定（会社発）
+  inboundDeparture    String   @default("会社")    // 乗車バス停
+  inboundArrival      String   @default("西条駅")  // 降車バス停
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("user_settings")
+}
+
+// 通知設定
+model Notification {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  direction   String   // outbound or inbound
+  notifyAt    DateTime // 通知時刻
+  isOneTime   Boolean  @default(true)  // 1回限りか繰り返しか
+  status      String   @default("pending") // pending, sent, cancelled
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("notifications")
+}
