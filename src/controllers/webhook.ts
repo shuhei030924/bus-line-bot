@@ -9,16 +9,25 @@ import { handlePostback } from '../handlers/postback';
  * LINE Webhookを処理
  */
 export async function webhookController(req: Request, res: Response) {
-  // 署名検証
-  const signature = req.headers['x-line-signature'] as string;
-  const body = JSON.stringify(req.body);
+  try {
+    // 署名検証
+    const signature = req.headers['x-line-signature'] as string;
+    
+    // 署名がない場合（LINE以外からのアクセス）
+    if (!signature) {
+      res.status(200).send('OK');
+      return;
+    }
+    
+    const body = JSON.stringify(req.body);
 
-  if (!validateSignature(body, config.lineChannelSecret, signature)) {
-    res.status(401).send('Invalid signature');
-    return;
-  }
+    if (!validateSignature(body, config.lineChannelSecret, signature)) {
+      console.error('Invalid signature');
+      res.status(401).send('Invalid signature');
+      return;
+    }
 
-  const events: WebhookEvent[] = req.body.events;
+    const events: WebhookEvent[] = req.body.events;
 
   // 各イベントを処理
   await Promise.all(
@@ -44,6 +53,10 @@ export async function webhookController(req: Request, res: Response) {
   );
 
   res.status(200).send('OK');
+  } catch (error) {
+    console.error('Webhook error:', error);
+    res.status(500).send('Internal Server Error');
+  }
 }
 
 /**
