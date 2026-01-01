@@ -5,7 +5,14 @@ import { startNotificationScheduler } from './services/notification';
 
 const app = express();
 
-// JSONパーサー
+// LINE Webhook用に生のボディを保存（署名検証に必要）
+app.use('/webhook', express.json({
+  verify: (req: any, _res, buf) => {
+    req.rawBody = buf.toString();
+  }
+}));
+
+// その他のルート用JSONパーサー
 app.use(express.json());
 
 // ルート

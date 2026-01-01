@@ -19,7 +19,8 @@ export async function webhookController(req: Request, res: Response) {
       return;
     }
     
-    const body = JSON.stringify(req.body);
+    // 生のボディを使用（署名検証に必要）
+    const body = (req as any).rawBody || JSON.stringify(req.body);
 
     if (!validateSignature(body, config.lineChannelSecret, signature)) {
       console.error('Invalid signature');
@@ -27,6 +28,8 @@ export async function webhookController(req: Request, res: Response) {
       return;
     }
 
+    console.log('Webhook received:', req.body.events?.length || 0, 'events');
+    
     const events: WebhookEvent[] = req.body.events;
 
   // 各イベントを処理
