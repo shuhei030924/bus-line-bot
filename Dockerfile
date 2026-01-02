@@ -21,5 +21,5 @@ RUN npm run build
 # ポートを公開
 EXPOSE 3000
 
-# アプリケーションを起動
-CMD ["npm", "start"]
+# アプリケーションを起動（起動前にDBマイグレーション実行）
+CMD ["sh", "-c", "npx prisma db push --skip-generate && npm start"]
