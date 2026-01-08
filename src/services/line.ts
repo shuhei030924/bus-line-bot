@@ -98,7 +98,10 @@ export function createBusScheduleMessage(
   const busItems: FlexComponent[] = buses.map((bus, index) => {
     const isFirst = index === 0;
     const badgeColor = isFirst ? headerColor : '#AAAAAA';
-    const badgeText = isFirst ? '次発' : '次々発';
+    // index === 0: 先発, index === 1: 次発, index >= 2: 次々発
+    let badgeText = '次々発';
+    if (index === 0) badgeText = '先発';
+    else if (index === 1) badgeText = '次発';
     
     // ゲート情報の色（北門は赤、それ以外は通常色）
     const isKitamon = bus.gate === '北門';
